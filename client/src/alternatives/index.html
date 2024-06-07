@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Record Audio</title>
+  </head>
+  <body>
+    <h1>Record Audio</h1>
+
+    <div>
+      <button id="startRecording">Start Recording</button>
+      <button id="stopRecording" disabled>Stop Recording</button>
+    </div>
+
+    <audio id="recordedAudio" controls></audio>
+
+    <script>
+      let mediaRecorder;
+      let audioChunks = [];
+
+      const startRecording = () => {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+
+          mediaRecorder.addEventListener("dataavailable", (event) => {
+            audioChunks.push(event.data);
+          });
+        });
+
+        document.getElementById("startRecording").disabled = true;
+        document.getElementById("stopRecording").disabled = false;
+      };
+
+      const stopRecording = () => {
+        mediaRecorder.stop();
+
+        mediaRecorder.addEventListener("stop", () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const audioElement = document.getElementById("recordedAudio");
+          audioElement.src = audioUrl;
+
+          // Optional: Download the recorded audio
+          const downloadLink = document.createElement("a");
+          downloadLink.href = audioUrl;
+          downloadLink.download = "recorded_audio.wav";
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          audioChunks = [];
+
+          document.getElementById("startRecording").disabled = false;
+          document.getElementById("stopRecording").disabled = true;
+        });
+      };
+
+      document
+        .getElementById("startRecording")
+        .addEventListener("click", startRecording);
+      document
+        .getElementById("stopRecording")
+        .addEventListener("click", stopRecording);
+    </script>
+  </body>
+</html>
